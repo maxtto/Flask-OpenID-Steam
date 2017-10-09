@@ -2,15 +2,19 @@ from os.path import dirname, join
 from flask import Flask, g, redirect, session, json
 from flask_sqlalchemy import SQLAlchemy
 from flask_openid import OpenID
-import urllib, urllib2
+import urllib.parse
+import urllib
 import re
+import ssl
+
+ssl._create_default_https_context = ssl._create_unverified_context
 
 app = Flask(__name__)
 app.config.update(
-    SQLALCHEMY_DATABASE_URI = 'sqlite:///flask-openid.db',
-    SECRET_KEY = 'STEAM API KEY',
-    DEBUG = True,
-    PORT = 5000
+    SQLALCHEMY_DATABASE_URI='sqlite:///flask-openid.db',
+    SECRET_KEY='SECRET_KEY',
+    DEBUG=True,
+    PORT=5000
 )
 
 oid = OpenID(app, join(dirname(__file__), 'openid_store'))
@@ -28,7 +32,7 @@ class User(db.Model):
         if rv is None:
             rv = User()
             rv.steam_id = steam_id
-            dbs.session.add(rv)
+            db.session.add(rv)
         return rv
 
 
@@ -40,8 +44,8 @@ def get_steam_userinfo(steam_id):
         'steamids': steam_id
     }
     url = 'http://api.steampowered.com/ISteamUser/' \
-          'GetPlayerSummaries/v0001/?%s' % urllib.urlencode(options)
-    rv = json.load(urllib2.urlopen(url))
+          'GetPlayerSummaries/v0001/?%s' % urllib.parse.urlencode(options)
+    rv = json.load(urllib.request.urlopen(url))
     return rv['response']['players']['player'][0] or {}
 
 @app.before_request
